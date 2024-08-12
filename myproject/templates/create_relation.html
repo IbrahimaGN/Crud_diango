@@ -1,0 +1,9 @@
+<!-- create_relation.html -->
+
+<form method="post">
+    {% csrf_token %}
+    Person 1 Name: <input type="text" name="name1"><br>
+    Person 2 Name: <input type="text" name="name2"><br>
+    Relation: <input type="text" name="relation"><br>
+    <input type="submit" value="Create">
+</form>
