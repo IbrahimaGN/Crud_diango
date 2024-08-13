@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
-from django.apps import apps
-
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from neo4j import GraphDatabase
 
 def get_driver():
@@ -19,8 +19,20 @@ def create_person(request):
         with driver.session() as session:
             session.run("CREATE (p:Person {name: $name, age: $age})", name=name, age=int(age))
 
-        return redirect('list_person')
+        return redirect('create_person')
     return render(request, 'create_person.html')
+
+
+def create_cours(request):
+    driver = get_driver()
+    if request.method == 'POST':
+        libelle = request.POST['libelle']
+
+        with driver.session() as session:
+            session.run("CREATE (c:Cours {libelle: $libelle})", libelle=libelle)
+
+        return redirect('create_cours')
+    return render(request, 'create_cours.html')
 
 
 def create_relation(request):
@@ -38,7 +50,7 @@ def create_relation(request):
                 name1=name1, name2=name2, relation=relation
             )
 
-        return redirect('list_person')
+        return redirect('create_relation')
     return render(request, 'create_relation.html')
 
 def list_person(request):
@@ -49,26 +61,57 @@ def list_person(request):
 
     return render(request, 'list_person.html', {'persons': persons})
 
+
+
 def update_person(request, person_id):
     driver = get_driver()
+
     if request.method == 'POST':
-        name = request.POST['name']
-        age = request.POST['age']
+        # Récupérer les données du formulaire
+        name = request.get('name')
+        age = request.get('age')
 
+        # Vérifier que les données sont présentes
+        if not name or not age:
+            return HttpResponse("Les champs 'name' et 'age' sont requis", status=400)
+
+        # Mettre à jour la personne dans la base de données Neo4j
         with driver.session() as session:
-            session.run("MATCH (p:Person) WHERE ID(p) = $id SET p.name = $name, p.age = $age", id=int(person_id), name=name, age=int(age))
+            session.run(
+                "MATCH (p:Person {id: $id}) "
+                "SET p.name = $name, p.age = $age", 
+                id=person_id, name=name, age=int(age)
+            )
 
-        return redirect('list_person')
+        return redirect('list_person')  # Rediriger vers la liste des personnes
 
+    # Récupérer les informations de la personne pour les préremplir dans le formulaire
     with driver.session() as session:
-        result = session.run("MATCH (p:Person) WHERE ID(p) = $id RETURN p.name AS name, p.age AS age", id=int(person_id))
+        result = session.run(
+            "MATCH (p:Person {id: $id}) "
+            "RETURN p.name AS name, p.age AS age", 
+            id=person_id
+        )
         person = result.single()
 
-    return render(request, 'update_person.html', {'person': person})
+        if person:
+            # Accéder aux données avec `.get()` pour éviter les erreurs si les clés sont absentes
+            person_data = {
+                'name': person.get('name'),
+                'age': person.get('age')
+            }
+        else:
+            return HttpResponse("Personne non trouvée", status=404)
+
+
+    # Passer les données récupérées au template
+    return render(request, 'update_person.html', {'person': person_data})
+
+
 
 def delete_person(request, person_id):
     driver = get_driver()
     with driver.session() as session:
-        session.run("MATCH (p:Person) WHERE ID(p) = $id DELETE p", id=int(person_id))
+        session.run("MATCH (p:Person) WHERE ID(p) = $id DETACH DELETE p", id=int(person_id))
 
     return redirect('list_person')
