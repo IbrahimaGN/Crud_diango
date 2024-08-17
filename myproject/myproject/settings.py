@@ -7,11 +7,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-'''def db_config():
-    NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
-    NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
-    NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'ibou1999')
-    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))'''
+NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
+NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
+NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'ibou1999')
+driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 SECRET_KEY = 'ua+1qp9-s7j@frz+d$pfqnz@ieghzvxs)v%z+i@tk*5)cwd+mo'
 

@@ -19,7 +19,7 @@ def create_person(request):
         with driver.session() as session:
             session.run("CREATE (p:Person {name: $name, age: $age})", name=name, age=int(age))
 
-        return redirect('create_person')
+        return redirect('list_person')
     return render(request, 'create_person.html')
 
 
@@ -67,46 +67,38 @@ def update_person(request, person_id):
     driver = get_driver()
 
     if request.method == 'POST':
-        # Récupérer les données du formulaire
-        name = request.get('name')
-        age = request.get('age')
+        name = request.POST.get('name')
+        age = request.POST.get('age')
 
-        # Vérifier que les données sont présentes
         if not name or not age:
             return HttpResponse("Les champs 'name' et 'age' sont requis", status=400)
 
-        # Mettre à jour la personne dans la base de données Neo4j
         with driver.session() as session:
             session.run(
-                "MATCH (p:Person {id: $id}) "
+                "MATCH (p:Person) WHERE ID(p) = $id "
                 "SET p.name = $name, p.age = $age", 
-                id=person_id, name=name, age=int(age)
+                id=int(person_id), name=name, age=int(age)
             )
 
-        return redirect('list_person')  # Rediriger vers la liste des personnes
+        return redirect('list_person')
 
-    # Récupérer les informations de la personne pour les préremplir dans le formulaire
     with driver.session() as session:
         result = session.run(
-            "MATCH (p:Person {id: $id}) "
+            "MATCH (p:Person) WHERE ID(p) = $id "
             "RETURN p.name AS name, p.age AS age", 
-            id=person_id
+            id=int(person_id)
         )
         person = result.single()
 
-        if person:
-            # Accéder aux données avec `.get()` pour éviter les erreurs si les clés sont absentes
-            person_data = {
-                'name': person.get('name'),
-                'age': person.get('age')
-            }
-        else:
-            return HttpResponse("Personne non trouvée", status=404)
+    if person:
+        person_data = {
+            'name': person['name'],
+            'age': person['age']
+        }
+    else:
+        return HttpResponse("Personne non trouvée", status=404)
 
-
-    # Passer les données récupérées au template
     return render(request, 'update_person.html', {'person': person_data})
-
 
 
 def delete_person(request, person_id):
